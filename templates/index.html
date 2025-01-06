@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City Weather</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #cities {
+            margin-top: 20px;
+        }
+        .city {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>City Weather</h1>
+    <button onclick="updateWeather()">Update</button>
+    <div id="cities"></div>
+
+    <script>
+        async function updateWeather() {
+            const response = await fetch('/update');
+            const data = await response.json();
+            const citiesDiv = document.getElementById('cities');
+            citiesDiv.innerHTML = '';
+            for (const [city, temp] of Object.entries(data)) {
+                const cityDiv = document.createElement('div');
+                cityDiv.className = 'city';
+                cityDiv.textContent = `${city}: ${temp}°C`;
+                citiesDiv.appendChild(cityDiv);
+            }
+        }
+    </script>
+</body>
+</html>
