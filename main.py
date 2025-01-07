@@ -93,10 +93,7 @@ def get_cities():
 def add_city(city: dict):
     # 添加城市
     cities.append(city)
-
-    # 按照国家名称排序 (你可以选择按 `capital` 排序)
-    cities.sort(key=lambda x: x["country"].lower())  # 排序不区分大小写
-
+    
     # 保存更新后的城市列表
     save_cities("europe.csv")
 
