@@ -91,9 +91,17 @@ def get_cities():
 # 添加城市
 @app.post("/cities")
 def add_city(city: dict):
+    # 添加城市
     cities.append(city)
-    save_cities("europe.csv")  # 添加城市后保存到文件
+
+    # 按照国家名称排序 (你可以选择按 `capital` 排序)
+    cities.sort(key=lambda x: x["country"].lower())  # 排序不区分大小写
+
+    # 保存更新后的城市列表
+    save_cities("europe.csv")
+
     return {"message": "City added successfully!"}
+
 
 # 删除城市
 @app.delete("/cities/{country_name}")
