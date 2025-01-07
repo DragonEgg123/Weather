@@ -131,6 +131,8 @@ async def update_weather():
         except Exception as e:
             weather_data[city_name] = f"Error: {str(e)}"
     
-    print(weather_data)  # 打印返回的数据
-    return JSONResponse(content=weather_data)
+    # 按照温度进行排序
+    sorted_weather_data = dict(sorted(weather_data.items(), key=lambda item: item[1] if isinstance(item[1], (int, float)) else float('inf')))
+    
+    return JSONResponse(content=sorted_weather_data)
 
