@@ -8,11 +8,34 @@
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
+            background-image: url("/static/background.jpg");
+            background-size: cover;
+            color: #fff;
+        }
+        .container {
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
+            max-width: 600px;
+            margin: 80px auto 0; /* 增加顶部间距 */
+        }
+        button, input {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 4px;
         }
         button {
-            padding: 10px 15px;
-            font-size: 16px;
+            background-color: #007BFF;
+            color: white;
             cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        input {
+            width: calc(100% - 20px);
         }
         #cities {
             margin-top: 20px;
@@ -20,26 +43,151 @@
         .city {
             margin-bottom: 10px;
         }
+        .city button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+        }
+        .city button:hover {
+            background-color: #cc0000;
+        }
+
+        /* 提示框样式 */
+        #message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 128, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            z-index: 1000;
+            display: none; /* 默认隐藏 */
+        }
+
+        /* 提示框错误样式 */
+        #message.error {
+            background-color: rgba(255, 0, 0, 0.8);
+        }
     </style>
 </head>
 <body>
-    <h1>City Weather</h1>
-    <button onclick="updateWeather()">Update</button>
-    <div id="cities"></div>
+    <!-- 显示提示信息 -->
+    <div id="message"></div>
+
+    <div class="container">
+        <h1>City Weather</h1>
+
+        <!-- 添加城市表单 -->
+        <form id="addCityForm">
+            <input type="text" id="countryInput" placeholder="Country (e.g., Spain)" required />
+            <input type="text" id="capitalInput" placeholder="Capital (e.g., Madrid)" required />
+            <input type="text" id="latitudeInput" placeholder="Latitude (e.g., 40.4168)" required />
+            <input type="text" id="longitudeInput" placeholder="Longitude (e.g., -3.7038)" required />
+            <button type="submit">Add City</button>
+        </form>
+
+        <!-- 更新天气按钮 -->
+        <button onclick="updateWeather()">Update Weather</button>
+
+        <!-- 显示城市和天气 -->
+        <div id="cities"></div>
+    </div>
 
     <script>
         async function updateWeather() {
             const response = await fetch('/update');
             const data = await response.json();
+            
+            console.log(data);  // 打印返回的数据，查看其格式
+
             const citiesDiv = document.getElementById('cities');
-            citiesDiv.innerHTML = '';
-            for (const [city, temp] of Object.entries(data)) {
-                const cityDiv = document.createElement('div');
-                cityDiv.className = 'city';
-                cityDiv.textContent = `${city}: ${temp}°C`;
-                citiesDiv.appendChild(cityDiv);
+            citiesDiv.innerHTML = '';  // 清空当前显示的城市信息
+
+            // 检查 data 是否是一个对象
+            if (typeof data === 'object' && data !== null) {
+                for (const [city, temp] of Object.entries(data)) {
+                    const cityDiv = document.createElement('div');
+                    cityDiv.className = 'city';
+                    cityDiv.textContent = `${city}: ${temp}°C`;
+
+                    // 添加删除按钮
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.onclick = () => deleteCity(city);  // 绑定删除城市的函数
+
+                    cityDiv.appendChild(deleteButton);  // 将删除按钮添加到城市信息旁边
+                    citiesDiv.appendChild(cityDiv);
+                }
+            } else {
+                console.error('Invalid data format:', data);
             }
         }
+
+        document.getElementById('addCityForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const country = document.getElementById('countryInput').value.trim();
+            const capital = document.getElementById('capitalInput').value.trim();
+            const latitude = parseFloat(document.getElementById('latitudeInput').value.trim());
+            const longitude = parseFloat(document.getElementById('longitudeInput').value.trim());
+            if (country && capital && !isNaN(latitude) && !isNaN(longitude)) {
+                const response = await fetch('/cities', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ country, capital, latitude, longitude }),
+                });
+
+                const messageDiv = document.getElementById('message'); // 获取提示信息容器
+                if (response.ok) {
+                    document.getElementById('addCityForm').reset(); // 清空表单
+                    updateWeather(); // 更新城市列表
+                    messageDiv.textContent = 'City added successfully!';
+                    messageDiv.classList.remove('error');
+                    messageDiv.style.display = 'block'; // 显示提示框
+                    setTimeout(() => messageDiv.style.display = 'none', 3000); // 3秒后隐藏提示框
+                } else {
+                    messageDiv.textContent = 'Failed to add city!';
+                    messageDiv.classList.add('error');
+                    messageDiv.style.display = 'block';
+                    setTimeout(() => messageDiv.style.display = 'none', 3000);
+                }
+            } else {
+                alert('Please enter valid inputs.');
+            }
+        });
+
+        async function deleteCity(country) {
+            const response = await fetch(`/cities/${country}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const messageDiv = document.getElementById('message'); // 获取提示信息容器
+            if (response.ok) {
+                updateWeather(); // 更新页面城市列表
+                messageDiv.textContent = `City from ${country} deleted successfully!`;
+                messageDiv.classList.remove('error');
+                messageDiv.style.display = 'block'; // 显示提示框
+                setTimeout(() => messageDiv.style.display = 'none', 3000); // 3秒后隐藏提示框
+            } else {
+                messageDiv.textContent = 'Failed to delete city!';
+                messageDiv.classList.add('error');
+                messageDiv.style.display = 'block';
+                setTimeout(() => messageDiv.style.display = 'none', 3000);
+            }
+        }
+
+        updateWeather(); // 初始化页面时加载城市数据
     </script>
 </body>
 </html>

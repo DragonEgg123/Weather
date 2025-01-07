@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
+from fastapi.staticfiles import StaticFiles
 import os
 
 app = FastAPI()
@@ -14,6 +15,9 @@ templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "t
 
 # Open-Meteo API的基URL
 BASE_URL = "https://api.open-meteo.com/v1/forecast"
+
+# 配置 FastAPI 提供静态文件服务
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # 存储城市信息
 cities = []
@@ -122,4 +126,6 @@ async def update_weather():
         except Exception as e:
             weather_data[city_name] = f"Error: {str(e)}"
     
+    print(weather_data)  # 打印返回的数据
     return JSONResponse(content=weather_data)
+
